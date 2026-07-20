@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { scrapForRun } from './economy';
 import {
   STARTER_WEAPON_ID,
   WEAPON_NODES,
@@ -102,9 +103,7 @@ export class MetaSaveService {
     milestonesReached: string[];
   }): { currencyEarned: number } {
     const s = this.save();
-    const timeBonus = Math.floor(input.timeSec * 1.2);
-    const killBonus = input.kills * 2;
-    const currencyEarned = timeBonus + killBonus;
+    const currencyEarned = scrapForRun(input.timeSec, input.kills);
     const milestones = Array.from(
       new Set([...s.milestones, ...input.milestonesReached]),
     );

@@ -1,4 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
+import { scrapForRun } from '../../meta/economy';
 import {
   ARENA_RADIUS,
   BOSS_A_TIME,
@@ -7,7 +8,12 @@ import {
   MAX_ENEMIES,
   MAX_PROJECTILES,
   MAX_XP_GEMS,
+  PLAYER_HIT_RADIUS,
   STAT_POOL,
+  Z_ENEMY,
+  Z_GEM,
+  Z_PLAYER,
+  Z_PROJECTILE,
 } from './constants';
 import {
   createBubbleEnemy,
@@ -133,14 +139,17 @@ export class GameSession {
 
     drawArenaFloor(this.floor);
     this.world.addChild(this.floor);
+    this.entityLayer.sortableChildren = true;
     this.world.addChild(this.entityLayer);
 
     this.tank = createTankGraphics();
+    this.tank.zIndex = Z_PLAYER;
     this.entityLayer.addChild(this.tank);
 
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       const gfx = createProjectileGfx(8, COLORS.bullet, COLORS.bulletOutline);
       gfx.visible = false;
+      gfx.zIndex = Z_PROJECTILE;
       this.entityLayer.addChild(gfx);
       this.projectiles.push({
         active: false,
@@ -160,6 +169,7 @@ export class GameSession {
     for (let i = 0; i < MAX_ENEMIES; i++) {
       const gfx = createBubbleEnemy(16, 0xff9aa2, 0xd45d7a);
       gfx.visible = false;
+      gfx.zIndex = Z_ENEMY;
       this.entityLayer.addChild(gfx);
       this.enemies.push({
         active: false,
@@ -181,6 +191,7 @@ export class GameSession {
     for (let i = 0; i < MAX_XP_GEMS; i++) {
       const gfx = createXpGemGfx();
       gfx.visible = false;
+      gfx.zIndex = Z_GEM;
       this.entityLayer.addChild(gfx);
       this.gems.push({ active: false, x: 0, y: 0, value: 1, gfx });
     }
@@ -258,13 +269,11 @@ export class GameSession {
   }
 
   private buildResult(): RunResult {
-    const timeBonus = Math.floor(this.timeSec * 1.2);
-    const killBonus = this.kills * 2;
     return {
       timeSec: this.timeSec,
       kills: this.kills,
       level: this.stats.level,
-      currencyEarned: timeBonus + killBonus,
+      currencyEarned: scrapForRun(this.timeSec, this.kills),
       milestonesReached: [...this.milestonesReached],
     };
   }
@@ -640,14 +649,38 @@ export class GameSession {
       const clamped = this.clampToArena(e.x, e.y, e.radius);
       e.x = clamped.x;
       e.y = clamped.y;
-      e.gfx.position.set(e.x, e.y);
 
-      // Contact damage (and enemy spit bullets hit player via projectile loop — skip for now)
-      const pd = Math.hypot(e.x - this.playerX, e.y - this.playerY);
-      if (pd < e.radius + 20 && this.iFrames <= 0) {
+      const sepDx = e.x - this.playerX;
+      const sepDy = e.y - this.playerY;
+      const sepDist = Math.hypot(sepDx, sepDy);
+      const minSep = e.radius + PLAYER_HIT_RADIUS;
+
+      // Damage while overlapping / touching — before we push them off the sprite.
+      if (sepDist <= minSep && this.iFrames <= 0) {
         this.hurtPlayer(e.contactDamage);
-        if (e.kind === 'exploder') this.killEnemy(e);
+        if (e.kind === 'exploder') {
+          e.gfx.position.set(e.x, e.y);
+          this.killEnemy(e);
+          continue;
+        }
       }
+
+      if (sepDist < minSep) {
+        if (sepDist < 0.001) {
+          const a = Math.random() * Math.PI * 2;
+          e.x = this.playerX + Math.cos(a) * minSep;
+          e.y = this.playerY + Math.sin(a) * minSep;
+        } else {
+          const s = minSep / sepDist;
+          e.x = this.playerX + sepDx * s;
+          e.y = this.playerY + sepDy * s;
+        }
+        const reclamped = this.clampToArena(e.x, e.y, e.radius);
+        e.x = reclamped.x;
+        e.y = reclamped.y;
+      }
+
+      e.gfx.position.set(e.x, e.y);
     }
 
     // Enemy spit: reuse projectiles that are "hostile" — simple approach:
@@ -726,6 +759,7 @@ export class GameSession {
     for (let i = 0; i < 120; i++) {
       const gfx = createProjectileGfx(8, 0xff6b6b, 0xb83232);
       gfx.visible = false;
+      gfx.zIndex = Z_PROJECTILE;
       this.entityLayer.addChild(gfx);
       this.hostileShots.push({
         active: false,
@@ -802,7 +836,9 @@ export class GameSession {
         h.gfx.visible = false;
         continue;
       }
-      if (Math.hypot(h.x - this.playerX, h.y - this.playerY) < 22) {
+      if (
+        Math.hypot(h.x - this.playerX, h.y - this.playerY) < PLAYER_HIT_RADIUS
+      ) {
         const dmg = (h as { damage?: number }).damage ?? 10;
         this.hurtPlayer(dmg);
         h.active = false;
