@@ -1,3 +1,5 @@
+import type { MapId } from '../../meta/maps';
+
 export type WeaponBehavior = 'bullet' | 'laser' | 'wave' | 'spin';
 
 export interface FireConfig {
@@ -112,6 +114,8 @@ export interface GameHudSnapshot {
   timeSec: number;
   kills: number;
   scrap: ScrapHud;
+  mapId: MapId;
+  mapName: string;
   paused: boolean;
   dead: boolean;
   levelUpPending: boolean;
@@ -119,6 +123,8 @@ export interface GameHudSnapshot {
 }
 
 export interface RunResult {
+  mapId: MapId;
+  mapName: string;
   timeSec: number;
   kills: number;
   level: number;

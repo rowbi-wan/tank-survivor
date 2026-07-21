@@ -11,8 +11,9 @@ import { RouterLink } from '@angular/router';
         <p class="eyebrow">Arena survival</p>
         <h1>Tank Survivors</h1>
         <p class="lede">
-          Stay centered. Aim the turret. Surf waves of foes — then spend Circuit,
-          Plating, and Core scrap on a branching cannon tree between runs.
+          Stay centered. Aim the turret. Surf waves of foes — then spend
+          Circuit, Plating, and Core scrap on a branching cannon tree between
+          runs. Unlock harder maps by lasting 20 minutes.
         </p>
         <div class="actions">
           <a routerLink="/run" class="btn primary">Start Run</a>

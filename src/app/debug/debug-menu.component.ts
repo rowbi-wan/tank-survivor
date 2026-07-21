@@ -155,7 +155,14 @@ const ENEMY_KINDS: EnemyKind[] = [
                 class="btn small"
                 (click)="meta.debugUnlockAll()"
               >
-                Unlock all
+                Unlock all weapons
+              </button>
+              <button
+                type="button"
+                class="btn small"
+                (click)="meta.debugUnlockAllMaps()"
+              >
+                Unlock all maps
               </button>
               <button
                 type="button"

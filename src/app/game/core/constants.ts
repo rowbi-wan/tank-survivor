@@ -1,4 +1,3 @@
-export const ARENA_RADIUS = 2200;
 export const FIXED_DT = 1 / 60;
 export const MAX_ENEMIES = 180;
 export const MAX_PROJECTILES = 400;

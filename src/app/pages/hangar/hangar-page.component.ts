@@ -2,6 +2,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { formatScrapCost } from '../../meta/economy';
+import { MAPS, mapUnlockHint, type MapId } from '../../meta/maps';
 import { MetaSaveService } from '../../meta/meta-save.service';
 import {
   STARTER_WEAPON_ID,
@@ -94,6 +95,41 @@ function buildTree(nodeId: string): TreeView {
                 {{ meta.save().milestones.join(', ') }}
               }
             </p>
+          </div>
+
+          <div class="maps" aria-label="Map select">
+            <h2 class="maps-title">Maps</h2>
+            <div class="map-grid">
+              @for (m of maps; track m.id) {
+                <button
+                  type="button"
+                  class="map-card"
+                  [class.selected]="meta.save().selectedMapId === m.id"
+                  [class.locked]="!isMapUnlocked(m.id)"
+                  [disabled]="!isMapUnlocked(m.id)"
+                  (click)="selectMap(m.id)"
+                >
+                  <img
+                    class="map-thumb"
+                    [src]="m.thumbnail"
+                    [alt]="m.name"
+                    width="72"
+                    height="72"
+                  />
+                  <span class="map-copy">
+                    <strong>{{ m.name }}</strong>
+                    <span class="map-blurb">{{ m.blurb }}</span>
+                    @if (isMapUnlocked(m.id)) {
+                      <span class="map-best"
+                        >Best {{ formatTime(mapBest(m.id)) }}</span
+                      >
+                    } @else {
+                      <span class="map-lock">{{ mapLockHint(m.id) }}</span>
+                    }
+                  </span>
+                </button>
+              }
+            </div>
           </div>
 
           <a routerLink="/run" class="btn primary deploy">Deploy</a>
@@ -515,12 +551,80 @@ function buildTree(nodeId: string): TreeView {
         display: flex;
         gap: 0.5rem;
       }
+      .maps {
+        width: 100%;
+      }
+      .maps-title {
+        font-family: 'Fredoka', sans-serif;
+        font-size: 1.1rem;
+        margin: 0 0 0.5rem;
+        color: var(--pink-deep);
+      }
+      .map-grid {
+        display: grid;
+        gap: 0.5rem;
+      }
+      .map-card {
+        text-align: left;
+        border: 3px solid var(--ink);
+        border-radius: 1rem;
+        padding: 0.5rem 0.65rem;
+        background: #fff;
+        cursor: pointer;
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 0.65rem;
+        align-items: center;
+        font: inherit;
+      }
+      .map-thumb {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 0.65rem;
+        border: 2px solid var(--ink);
+        background: #e8ecf0;
+      }
+      .map-card.locked .map-thumb {
+        filter: grayscale(0.85) brightness(0.9);
+      }
+      .map-copy {
+        display: grid;
+        gap: 0.15rem;
+        min-width: 0;
+      }
+      .map-card strong {
+        font-family: 'Fredoka', sans-serif;
+      }
+      .map-blurb {
+        font-size: 0.8rem;
+        color: var(--ink-soft);
+      }
+      .map-best {
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+      .map-lock {
+        font-size: 0.8rem;
+        color: #b83232;
+      }
+      .map-card.selected {
+        border-color: var(--teal-deep);
+        box-shadow: 0 0 0 3px rgba(45, 140, 140, 0.25);
+        background: #e8faf8;
+      }
+      .map-card.locked {
+        opacity: 0.65;
+        cursor: not-allowed;
+        background: #f0ecf5;
+      }
     `,
   ],
 })
 export class HangarPageComponent {
   readonly meta = inject(MetaSaveService);
   readonly slots = SLOTS;
+  readonly maps = MAPS;
   readonly weaponTree = buildTree(STARTER_WEAPON_ID);
 
   readonly turretOpen = signal(false);
@@ -581,6 +685,22 @@ export class HangarPageComponent {
 
   equip(id: string): void {
     this.meta.equip(id);
+  }
+
+  isMapUnlocked(id: MapId): boolean {
+    return this.meta.isMapUnlocked(id);
+  }
+
+  mapBest(id: MapId): number {
+    return this.meta.save().bestTimeByMap[id] ?? 0;
+  }
+
+  mapLockHint(id: MapId): string {
+    return mapUnlockHint(id, this.meta.save().bestTimeByMap) ?? 'Locked';
+  }
+
+  selectMap(id: MapId): void {
+    this.meta.selectMap(id);
   }
 
   parentName(node: WeaponNode): string {

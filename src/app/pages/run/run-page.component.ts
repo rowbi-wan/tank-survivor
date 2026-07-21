@@ -27,6 +27,7 @@ import { MetaSaveService } from '../../meta/meta-save.service';
             <span>HP {{ h.hp | number: '1.0-0' }} / {{ h.maxHp }}</span>
             <span>Lv {{ h.level }}</span>
             <span>{{ formatTime(h.timeSec) }}</span>
+            <span>{{ h.mapName }}</span>
             <span>Kills {{ h.kills }}</span>
             <span class="scrap-c">C {{ h.scrap.circuit }}</span>
             <span class="scrap-p">P {{ h.scrap.plating }}</span>
@@ -65,6 +66,7 @@ import { MetaSaveService } from '../../meta/meta-save.service';
           <div class="modal-card surface-panel">
             <h2>Wrecked!</h2>
             <ul>
+              <li>{{ sum.mapName }}</li>
               <li>Survived {{ formatTime(sum.timeSec) }}</li>
               <li>Kills {{ sum.kills }}</li>
               <li>Level {{ sum.level }}</li>
@@ -213,6 +215,7 @@ export class RunPageComponent {
     if (this.settled) return;
     this.settled = true;
     const { scrapEarned } = this.meta.applyRunResult({
+      mapId: result.mapId,
       timeSec: result.timeSec,
       scrapEarned: result.scrapEarned,
       milestonesReached: result.milestonesReached,

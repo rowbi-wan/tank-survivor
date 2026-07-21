@@ -9,6 +9,14 @@ import {
   type ScrapType,
 } from './economy';
 import {
+  MAP_UNLOCK_TIME_SEC,
+  MAPS,
+  STARTER_MAP_ID,
+  emptyBestTimes,
+  isMapUnlocked,
+  type MapId,
+} from './maps';
+import {
   STARTER_WEAPON_ID,
   WEAPON_NODES,
   getPathToNode,
@@ -16,13 +24,16 @@ import {
   isLegalEquip,
 } from './weapon-tree';
 
-/** Bumped to reset old single-scrap saves (economy + unlocks). */
-const SAVE_KEY = 'tank-survivors-meta-v2';
+/** Bumped for maps + fresh economy/unlocks. */
+const SAVE_KEY = 'tank-survivors-meta-v3';
 
 export interface MetaSave {
   currency: ScrapBundle;
   unlockedNodeIds: string[];
   equippedLeafId: string;
+  selectedMapId: MapId;
+  bestTimeByMap: Record<MapId, number>;
+  /** Max across maps (display convenience). */
   bestTimeSec: number;
   milestones: string[];
 }
@@ -32,6 +43,8 @@ function defaultSave(): MetaSave {
     currency: emptyScrap(),
     unlockedNodeIds: [STARTER_WEAPON_ID],
     equippedLeafId: STARTER_WEAPON_ID,
+    selectedMapId: STARTER_MAP_ID,
+    bestTimeByMap: emptyBestTimes(),
     bestTimeSec: 0,
     milestones: [],
   };
@@ -55,15 +68,27 @@ export class MetaSaveService {
               core: Number(parsed.currency.core) || 0,
             }
           : base.currency;
+      const bestTimeByMap = {
+        ...emptyBestTimes(),
+        ...(parsed.bestTimeByMap ?? {}),
+      };
+      let selectedMapId = parsed.selectedMapId ?? base.selectedMapId;
+      if (!isMapUnlocked(selectedMapId, bestTimeByMap)) {
+        selectedMapId = STARTER_MAP_ID;
+      }
       return {
         ...base,
         ...parsed,
         currency,
+        bestTimeByMap,
+        selectedMapId,
         unlockedNodeIds: parsed.unlockedNodeIds?.length
           ? parsed.unlockedNodeIds
           : base.unlockedNodeIds,
         equippedLeafId: parsed.equippedLeafId ?? base.equippedLeafId,
         milestones: parsed.milestones ?? [],
+        bestTimeSec:
+          parsed.bestTimeSec ?? Math.max(0, ...Object.values(bestTimeByMap)),
       };
     } catch {
       return defaultSave();
@@ -73,6 +98,17 @@ export class MetaSaveService {
   private persist(next: MetaSave): void {
     this.save.set(next);
     localStorage.setItem(SAVE_KEY, JSON.stringify(next));
+  }
+
+  selectMap(mapId: MapId): boolean {
+    const s = this.save();
+    if (!isMapUnlocked(mapId, s.bestTimeByMap)) return false;
+    this.persist({ ...s, selectedMapId: mapId });
+    return true;
+  }
+
+  isMapUnlocked(mapId: MapId): boolean {
+    return isMapUnlocked(mapId, this.save().bestTimeByMap);
   }
 
   equip(nodeId: string): boolean {
@@ -116,6 +152,7 @@ export class MetaSaveService {
   }
 
   applyRunResult(input: {
+    mapId: MapId;
     timeSec: number;
     scrapEarned: ScrapBundle;
     milestonesReached: string[];
@@ -124,10 +161,20 @@ export class MetaSaveService {
     const milestones = Array.from(
       new Set([...s.milestones, ...input.milestonesReached]),
     );
+    const bestTimeByMap = {
+      ...s.bestTimeByMap,
+      [input.mapId]: Math.max(s.bestTimeByMap[input.mapId] ?? 0, input.timeSec),
+    };
+    const bestTimeSec = Math.max(
+      s.bestTimeSec,
+      input.timeSec,
+      ...Object.values(bestTimeByMap),
+    );
     this.persist({
       ...s,
       currency: addScrap(s.currency, input.scrapEarned),
-      bestTimeSec: Math.max(s.bestTimeSec, input.timeSec),
+      bestTimeByMap,
+      bestTimeSec,
       milestones,
     });
     return { scrapEarned: input.scrapEarned };
@@ -161,6 +208,20 @@ export class MetaSaveService {
     this.persist({
       ...s,
       unlockedNodeIds: WEAPON_NODES.map((n) => n.id),
+    });
+  }
+
+  /** Dev: grant 20:00 on every map so all maps unlock. */
+  debugUnlockAllMaps(): void {
+    const s = this.save();
+    const bestTimeByMap = emptyBestTimes();
+    for (const m of MAPS) {
+      bestTimeByMap[m.id] = MAP_UNLOCK_TIME_SEC;
+    }
+    this.persist({
+      ...s,
+      bestTimeByMap,
+      bestTimeSec: Math.max(s.bestTimeSec, MAP_UNLOCK_TIME_SEC),
     });
   }
 

@@ -7,7 +7,14 @@ import {
   type ScrapType,
 } from '../../meta/economy';
 import {
-  ARENA_RADIUS,
+  bounceOffWall,
+  circleWallPush,
+  pickMapEnemyKind,
+  raycastWalls,
+  resolveCircleWalls,
+  type MapDef,
+} from '../../meta/maps';
+import {
   BOSS_A_TIME,
   BOSS_B_TIME,
   COLORS,
@@ -129,6 +136,7 @@ function defaultPlayer(): PlayerStats {
 export class GameSession {
   readonly world = new Container();
   readonly input: InputState;
+  readonly map: MapDef;
 
   private readonly floor = new Graphics();
   private readonly entityLayer = new Container();
@@ -168,16 +176,22 @@ export class GameSession {
   private readonly onEvent: (e: GameEvent) => void;
   private hudAcc = 0;
 
+  private get arenaRadius(): number {
+    return this.map.arenaRadius;
+  }
+
   constructor(
     input: InputState,
     fireConfig: FireConfig,
+    map: MapDef,
     onEvent: (e: GameEvent) => void,
   ) {
     this.input = input;
     this.fireConfig = fireConfig;
+    this.map = map;
     this.onEvent = onEvent;
 
-    drawArenaFloor(this.floor);
+    drawArenaFloor(this.floor, map);
     this.world.addChild(this.floor);
     this.entityLayer.sortableChildren = true;
     this.world.addChild(this.entityLayer);
@@ -346,6 +360,8 @@ export class GameSession {
 
   private buildResult(): RunResult {
     return {
+      mapId: this.map.id,
+      mapName: this.map.name,
       timeSec: this.timeSec,
       kills: this.kills,
       level: this.stats.level,
@@ -375,11 +391,19 @@ export class GameSession {
     this.playerY += axis.y * this.stats.moveSpeed * dt;
 
     const dist = Math.hypot(this.playerX, this.playerY);
-    if (dist > ARENA_RADIUS) {
-      const s = ARENA_RADIUS / dist;
+    if (dist > this.arenaRadius) {
+      const s = this.arenaRadius / dist;
       this.playerX *= s;
       this.playerY *= s;
     }
+    const resolved = resolveCircleWalls(
+      this.playerX,
+      this.playerY,
+      PLAYER_HIT_RADIUS,
+      this.map.walls,
+    );
+    this.playerX = resolved.x;
+    this.playerY = resolved.y;
 
     if (axis.x !== 0 || axis.y !== 0) {
       this.hullAngle = Math.atan2(axis.y, axis.x);
@@ -474,7 +498,16 @@ export class GameSession {
 
   private fireLaser(damage: number): void {
     const cfg = this.fireConfig;
-    const len = cfg.laserLength;
+    let len = cfg.laserLength;
+    const wallHit = raycastWalls(
+      this.playerX,
+      this.playerY,
+      Math.cos(this.turretAngle),
+      Math.sin(this.turretAngle),
+      len,
+      this.map.walls,
+    );
+    if (wallHit !== null) len = Math.max(12, wallHit);
     const steps = Math.ceil(len / 18);
     let refractOrigin: { x: number; y: number } | null = null;
 
@@ -722,6 +755,9 @@ export class GameSession {
       const push = Math.min(90, cfg.knockback * 0.15);
       e.x += (dx / d) * push;
       e.y += (dy / d) * push;
+      const solid = this.clampToArena(e.x, e.y, e.radius);
+      e.x = solid.x;
+      e.y = solid.y;
     }
 
     if (e.hp <= 0) this.killEnemy(e);
@@ -764,9 +800,36 @@ export class GameSession {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
 
+      if (p.kind !== 'laser' && this.map.walls.length) {
+        for (const wall of this.map.walls) {
+          if (!circleWallPush(p.x, p.y, p.radius, wall)) continue;
+          if (p.ricochetLeft > 0) {
+            const bounced = bounceOffWall(p.vx, p.vy, p.x, p.y, wall);
+            p.vx = bounced.vx;
+            p.vy = bounced.vy;
+            p.ricochetLeft -= 1;
+            const pushed = resolveCircleWalls(
+              p.x,
+              p.y,
+              p.radius + 2,
+              this.map.walls,
+            );
+            p.x = pushed.x;
+            p.y = pushed.y;
+          } else if (p.splashRadius > 0) {
+            this.explodeProjectile(p);
+          } else {
+            p.active = false;
+            p.gfx.visible = false;
+          }
+          break;
+        }
+        if (!p.active) continue;
+      }
+
       if (p.ricochetLeft > 0) {
         const d = Math.hypot(p.x, p.y);
-        if (d > ARENA_RADIUS - 10) {
+        if (d > this.arenaRadius - 10) {
           const nx = p.x / d;
           const ny = p.y / d;
           const dot = p.vx * nx + p.vy * ny;
@@ -794,7 +857,7 @@ export class GameSession {
 
       p.gfx.position.set(p.x, p.y);
 
-      if (p.life <= 0 || Math.hypot(p.x, p.y) > ARENA_RADIUS + 200) {
+      if (p.life <= 0 || Math.hypot(p.x, p.y) > this.arenaRadius + 200) {
         p.active = false;
         p.gfx.visible = false;
         continue;
@@ -882,7 +945,7 @@ export class GameSession {
   }
 
   private updateSpawns(dt: number): void {
-    const density = 0.55 + this.timeSec * 0.035;
+    const density = (0.55 + this.timeSec * 0.035) * this.map.densityMult;
     this.spawnAcc += dt * density;
     while (this.spawnAcc >= 1) {
       this.spawnAcc -= 1;
@@ -892,13 +955,7 @@ export class GameSession {
   }
 
   private pickEnemyKind(): EnemyKind {
-    const t = this.timeSec;
-    const roll = Math.random();
-    if (t > 180 && roll < 0.12) return 'exploder';
-    if (t > 90 && roll < 0.2) return 'spitter';
-    if (t > 45 && roll < 0.28) return 'brute';
-    if (roll < 0.45) return 'swarm';
-    return 'chaser';
+    return pickMapEnemyKind(this.map, this.timeSec);
   }
 
   private enemyDef(kind: EnemyKind) {
@@ -1018,10 +1075,13 @@ export class GameSession {
     pad: number,
   ): { x: number; y: number } {
     const d = Math.hypot(x, y);
-    const max = ARENA_RADIUS - pad;
-    if (d <= max) return { x, y };
-    const s = max / d;
-    return { x: x * s, y: y * s };
+    const max = this.arenaRadius - pad;
+    let out = { x, y };
+    if (d > max) {
+      const s = max / d;
+      out = { x: x * s, y: y * s };
+    }
+    return resolveCircleWalls(out.x, out.y, pad, this.map.walls);
   }
 
   private activeEnemyCount(): number {
@@ -1275,8 +1335,18 @@ export class GameSession {
       h.life -= dt;
       h.x += h.vx * dt;
       h.y += h.vy * dt;
+      if (this.map.walls.length) {
+        for (const wall of this.map.walls) {
+          if (circleWallPush(h.x, h.y, 6, wall)) {
+            h.active = false;
+            h.gfx.visible = false;
+            break;
+          }
+        }
+        if (!h.active) continue;
+      }
       h.gfx.position.set(h.x, h.y);
-      if (h.life <= 0) {
+      if (h.life <= 0 || Math.hypot(h.x, h.y) > this.arenaRadius + 80) {
         h.active = false;
         h.gfx.visible = false;
         continue;
@@ -1349,6 +1419,8 @@ export class GameSession {
       timeSec: this.timeSec,
       kills: this.kills,
       scrap: { ...this.runScrap },
+      mapId: this.map.id,
+      mapName: this.map.name,
       paused: this.paused || this.debugPaused,
       dead: this.dead,
       levelUpPending: this.levelUpPending,

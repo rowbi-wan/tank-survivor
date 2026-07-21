@@ -12,8 +12,9 @@ import { Application, Graphics } from 'pixi.js';
 import { DebugMenuService } from '../debug/debug-menu.service';
 import type { RunDebugApi } from '../debug/run-debug-api';
 import { MetaSaveService } from '../meta/meta-save.service';
+import { getMap } from '../meta/maps';
 import { resolveFireConfig } from '../meta/weapon-tree';
-import { FIXED_DT, COLORS } from './core/constants';
+import { FIXED_DT } from './core/constants';
 import { createAimReticle } from './core/graphics';
 import { GameSession } from './core/game-session';
 import { InputState } from './core/input';
@@ -71,10 +72,11 @@ export class GameHostComponent
 
   async ngAfterViewInit(): Promise<void> {
     const host = this.hostRef.nativeElement;
+    const map = getMap(this.meta.save().selectedMapId);
     const app = new Application();
     await app.init({
       resizeTo: host,
-      background: COLORS.skyTop,
+      background: map.palette.skyTop,
       antialias: true,
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       autoDensity: true,
@@ -86,7 +88,9 @@ export class GameHostComponent
     this.detachInput = input.attach(host);
 
     const fire = resolveFireConfig(this.meta.save().equippedLeafId);
-    const session = new GameSession(input, fire, (e) => this.handleEvent(e));
+    const session = new GameSession(input, fire, map, (e) =>
+      this.handleEvent(e),
+    );
     session.setViewSize(app.screen.width, app.screen.height);
     app.stage.addChild(session.world);
     this.session = session;

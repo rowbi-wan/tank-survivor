@@ -1,26 +1,35 @@
 import { Container, Graphics } from 'pixi.js';
 import { SCRAP_COLOR, SCRAP_OUTLINE, type ScrapType } from '../../meta/economy';
-import { ARENA_RADIUS, COLORS } from './constants';
+import type { MapDef } from '../../meta/maps';
+import { COLORS } from './constants';
 import type { EnemyKind } from './types';
 
-export function drawArenaFloor(g: Graphics): void {
+export function drawArenaFloor(g: Graphics, map: MapDef): void {
+  const radius = map.arenaRadius;
+  const { grass, grassDark, wall, wallOutline } = map.palette;
   g.clear();
-  g.circle(0, 0, ARENA_RADIUS + 80);
-  g.fill({ color: COLORS.grassDark });
-  g.circle(0, 0, ARENA_RADIUS);
-  g.fill({ color: COLORS.grass });
+  g.circle(0, 0, radius + 80);
+  g.fill({ color: grassDark });
+  g.circle(0, 0, radius);
+  g.fill({ color: grass });
 
   for (let i = 0; i < 48; i++) {
     const a = (i / 48) * Math.PI * 2;
-    const r = 180 + ((i * 97) % Math.floor(ARENA_RADIUS * 0.85));
+    const r = 180 + ((i * 97) % Math.floor(radius * 0.85));
     const x = Math.cos(a) * r;
     const y = Math.sin(a * 1.3) * r * 0.9;
     g.circle(x, y, 10 + (i % 5) * 3);
     g.fill({ color: 0xffffff, alpha: 0.12 });
   }
 
-  g.circle(0, 0, ARENA_RADIUS);
+  g.circle(0, 0, radius);
   g.stroke({ width: 10, color: 0xffffff, alpha: 0.35 });
+
+  for (const w of map.walls) {
+    g.roundRect(w.x - w.w / 2, w.y - w.h / 2, w.w, w.h, 8);
+    g.fill({ color: wall });
+    g.stroke({ width: 3, color: wallOutline });
+  }
 }
 
 export type TankView = Container & { hull: Graphics; turret: Graphics };

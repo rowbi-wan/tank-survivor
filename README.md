@@ -19,14 +19,26 @@ Open `http://localhost:4200`.
 
 **Home** — Title and pitch. Start a run, or open the Hangar first.
 
-**Hangar** — Between-run hub. See your three scrap banks, unlock weapon-tree nodes (typed costs), equip one active loadout path, check best time and milestones, then Deploy.
+**Hangar** — Between-run hub. Scrap banks, weapon tree, **map select** (Open Yard / Ruined Depot / Tight Foundry), best times, Deploy.
 
-**Run** — Full-screen arena with HUD (HP, level, timer, kills, scrap C/P/K, XP). Overlays pause the action for:
+**Run** — Full-screen arena with HUD (map name, HP, level, timer, kills, scrap C/P/K, XP). Overlays pause the action for:
 
 - **Level up** — pick 1 of 3 upgrades
-- **Wrecked!** — run summary (time, kills, level, scrap by type) → Hangar, Retry, or Home
+- **Wrecked!** — run summary (map, time, kills, level, scrap by type) → Hangar, Retry, or Home
 
-No pause menu, map select, or settings screen yet.
+No pause menu or settings screen yet.
+
+## Maps
+
+Three authored arenas (walls + size). Pick in the Hangar; Home Start Run uses your last selection.
+
+| Map                     | Layout                | Enemies                           |
+| ----------------------- | --------------------- | --------------------------------- |
+| **Open Yard** (starter) | Large open circle     | Swarm / chaser heavy              |
+| **Ruined Depot**        | Medium + cover walls  | Brutes + spitters                 |
+| **Tight Foundry**       | Smaller + dense walls | Exploder pressure, higher density |
+
+Unlock the next map by lasting **20:00** on the previous one. Walls block movement and all projectiles. Weapon milestones (`survive_5` / `survive_10`) are global across maps.
 
 ## A run
 
@@ -145,9 +157,9 @@ flowchart TB
 ## How it fits together
 
 ```text
-Home → Hangar (spend typed scrap, pick a branch) → Deploy
+Home → Hangar (scrap, weapon, map) → Deploy
          ↑                                      │
-         └── Wrecked! (scrap bank + milestones) ←────┘
+         └── Wrecked! (scrap + map best + milestones) ←────┘
                     Survive waves + bosses,
                     level stats mid-run
 ```
@@ -159,7 +171,8 @@ Identity lives in the Hangar; improvisation lives in the arena. The tree says _h
 V1 is a tight desktop loop. Deferred ideas:
 
 - Extra weapons and **gadgets** (mines, drones, auras)—not just one deep cannon path
-- Real terrain / authored maps (today’s arena is a soft open circle)
+- Real terrain / authored maps beyond the three wall+size arenas
+- Hazards and map-specific scrap tables
 - Objectives beyond “survive as long as you can”
 - Mobile / touch controls
 - Polished sprites instead of procedural vector art
