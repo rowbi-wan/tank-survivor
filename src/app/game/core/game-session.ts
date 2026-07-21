@@ -23,6 +23,7 @@ import {
   createTankGraphics,
   createXpGemGfx,
   drawArenaFloor,
+  drawRobotEnemy,
   type TankView,
 } from './graphics';
 import { InputState } from './input';
@@ -203,7 +204,7 @@ export class GameSession {
       });
     }
     for (let i = 0; i < MAX_ENEMIES; i++) {
-      const gfx = createEnemyGfx(16, 0xff9aa2, 0xd45d7a);
+      const gfx = createEnemyGfx();
       gfx.visible = false;
       gfx.zIndex = Z_ENEMY;
       this.entityLayer.addChild(gfx);
@@ -988,17 +989,13 @@ export class GameSession {
     slot.armorCrackTimer = 0;
     slot.slowTimer = 0;
     slot.slowMult = 1;
-    slot.gfx.clear();
-    slot.gfx.circle(0, 0, def.radius);
-    slot.gfx.fill({ color: def.color });
-    slot.gfx.stroke({
-      width: kind.startsWith('boss') ? 5 : 3,
-      color: def.outline,
-    });
-    slot.gfx.circle(-def.radius * 0.3, -def.radius * 0.3, def.radius * 0.25);
-    slot.gfx.fill({ color: 0xffffff, alpha: 0.45 });
+    drawRobotEnemy(slot.gfx, kind, def.radius, def.color, def.outline);
     slot.gfx.visible = true;
     slot.gfx.position.set(slot.x, slot.y);
+    slot.gfx.rotation = Math.atan2(
+      this.playerY - slot.y,
+      this.playerX - slot.x,
+    );
   }
 
   private clampToArena(
@@ -1098,6 +1095,7 @@ export class GameSession {
       }
 
       e.gfx.position.set(e.x, e.y);
+      e.gfx.rotation = Math.atan2(dy, dx);
     }
 
     // Enemy spit: reuse projectiles that are "hostile" — simple approach:

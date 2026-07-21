@@ -28,8 +28,8 @@ export const COLORS = {
   bulletOutline: 0xe6c85c,
   laser: 0x7fe9ff,
   wave: 0xc5a3ff,
-  xp: 0x7dffb3,
-  xpOutline: 0x3dbf7a,
+  xp: 0xc0c8d4,
+  xpOutline: 0x5a6570,
   uiInk: 0x3a2f45,
 } as const;
 

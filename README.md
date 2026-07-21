@@ -34,8 +34,8 @@ You enter with whatever cannon path you equipped in the Hangar (default: Main Ca
 
 - Move with WASD; the hull faces how you move
 - Aim the turret with the mouse; hold click to fire
-- Enemies densify over time: chasers and swarmers first, then brutes, ranged spitters, and suicidal exploders
-- Kills drop XP gems; pick them up to level and choose a temporary boost (hull, speed, damage, fire rate, collector range)
+- Enemies densify over time: scout drones and swarm bots first, then brutes, ranged spitters, and suicidal exploders
+- Kills drop scrap shards (XP); pick them up to level and choose a temporary boost (hull, speed, damage, fire rate, collector range)
 - Bosses at **5:00** and **10:00** are milestones, not a finale
 - When HP hits zero → scrap from time + kills → back to Hangar
 
