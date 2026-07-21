@@ -120,6 +120,8 @@ export class GameSession {
   private bossBSpawned = false;
   private dead = false;
   private paused = false;
+  private debugPaused = false;
+  private godMode = false;
   private levelUpPending = false;
   private levelUpOptions: StatUpgradeOption[] = [];
   private viewW = 800;
@@ -241,7 +243,7 @@ export class GameSession {
       this.hudAcc = 0;
       this.emitHud();
     }
-    if (this.paused || this.levelUpPending) {
+    if (this.paused || this.levelUpPending || this.debugPaused) {
       this.syncCamera();
       return;
     }
@@ -795,7 +797,7 @@ export class GameSession {
   }
 
   private hurtPlayer(amount: number): void {
-    if (this.iFrames > 0 || this.dead) return;
+    if (this.godMode || this.iFrames > 0 || this.dead) return;
     this.stats.hp -= amount;
     this.iFrames = 0.7;
   }
@@ -903,11 +905,61 @@ export class GameSession {
       xpToNext: this.stats.xpToNext,
       timeSec: this.timeSec,
       kills: this.kills,
-      paused: this.paused,
+      paused: this.paused || this.debugPaused,
       dead: this.dead,
       levelUpPending: this.levelUpPending,
       levelUpOptions: this.levelUpOptions,
     };
     this.onEvent({ type: 'hud', snapshot });
+  }
+
+  // --- Dev debug API ---
+
+  isLevelUpPending(): boolean {
+    return this.levelUpPending;
+  }
+
+  setDebugPaused(paused: boolean): void {
+    this.debugPaused = paused;
+    this.emitHud();
+  }
+
+  setGodMode(on: boolean): void {
+    this.godMode = on;
+    if (on) this.stats.hp = this.stats.maxHp;
+    this.emitHud();
+  }
+
+  isGodMode(): boolean {
+    return this.godMode;
+  }
+
+  healFull(): void {
+    this.stats.hp = this.stats.maxHp;
+    this.emitHud();
+  }
+
+  addTime(seconds: number): void {
+    this.timeSec = Math.max(0, this.timeSec + seconds);
+    this.checkMilestones();
+    this.emitHud();
+  }
+
+  setTime(seconds: number): void {
+    this.timeSec = Math.max(0, seconds);
+    this.checkMilestones();
+    this.emitHud();
+  }
+
+  debugSpawnEnemy(kind: EnemyKind): void {
+    this.spawnEnemy(kind, true);
+  }
+
+  clearEnemies(): void {
+    for (const e of this.enemies) {
+      if (!e.active) continue;
+      e.active = false;
+      e.gfx.visible = false;
+    }
   }
 }

@@ -123,4 +123,56 @@ export class MetaSaveService {
   allNodes() {
     return WEAPON_NODES;
   }
+
+  /** Dev: add scrap without a run. */
+  debugAddScrap(amount: number): void {
+    const s = this.save();
+    this.persist({ ...s, currency: s.currency + amount });
+  }
+
+  /** Dev: unlock every weapon node (no cost / gate checks). */
+  debugUnlockAll(): void {
+    const s = this.save();
+    this.persist({
+      ...s,
+      unlockedNodeIds: WEAPON_NODES.map((n) => n.id),
+    });
+  }
+
+  /** Dev: grant common milestones used by the tree / hangar. */
+  debugGrantMilestones(): void {
+    const s = this.save();
+    const milestones = Array.from(
+      new Set([
+        ...s.milestones,
+        'survive_1',
+        'survive_5',
+        'survive_10',
+        'boss_a',
+        'boss_b',
+      ]),
+    );
+    this.persist({ ...s, milestones });
+  }
+
+  /** Dev: unlock the full path to a node and equip it immediately. */
+  debugEquipWeapon(nodeId: string): boolean {
+    const node = getWeaponNode(nodeId);
+    if (!node) return false;
+    const s = this.save();
+    const unlocked = new Set(s.unlockedNodeIds);
+    for (const part of getPathToNode(nodeId)) unlocked.add(part.id);
+    this.persist({
+      ...s,
+      unlockedNodeIds: [...unlocked],
+      equippedLeafId: nodeId,
+    });
+    return true;
+  }
+
+  /** Dev: wipe meta progress back to defaults. */
+  debugResetSave(): void {
+    localStorage.removeItem(SAVE_KEY);
+    this.persist(defaultSave());
+  }
 }

@@ -9,6 +9,8 @@ import {
   output,
 } from '@angular/core';
 import { Application, Graphics } from 'pixi.js';
+import { DebugMenuService } from '../debug/debug-menu.service';
+import type { RunDebugApi } from '../debug/run-debug-api';
 import { MetaSaveService } from '../meta/meta-save.service';
 import { resolveFireConfig } from '../meta/weapon-tree';
 import { FIXED_DT, COLORS } from './core/constants';
@@ -16,6 +18,7 @@ import { createAimReticle } from './core/graphics';
 import { GameSession } from './core/game-session';
 import { InputState } from './core/input';
 import type {
+  EnemyKind,
   GameEvent,
   GameHudSnapshot,
   RunResult,
@@ -45,7 +48,9 @@ import type {
     `,
   ],
 })
-export class GameHostComponent implements AfterViewInit, OnDestroy {
+export class GameHostComponent
+  implements AfterViewInit, OnDestroy, RunDebugApi
+{
   @ViewChild('host', { static: true }) hostRef!: ElementRef<HTMLDivElement>;
 
   readonly hud = output<GameHudSnapshot>();
@@ -53,6 +58,7 @@ export class GameHostComponent implements AfterViewInit, OnDestroy {
   readonly runEnd = output<RunResult>();
 
   private readonly meta = inject(MetaSaveService);
+  private readonly debugMenu = inject(DebugMenuService);
   private readonly zone = inject(NgZone);
   private app: Application | null = null;
   private session: GameSession | null = null;
@@ -84,6 +90,7 @@ export class GameHostComponent implements AfterViewInit, OnDestroy {
     session.setViewSize(app.screen.width, app.screen.height);
     app.stage.addChild(session.world);
     this.session = session;
+    this.debugMenu.registerRun(this);
 
     const reticle = createAimReticle();
     reticle.position.set(app.screen.width / 2, app.screen.height / 2);
@@ -118,6 +125,51 @@ export class GameHostComponent implements AfterViewInit, OnDestroy {
     this.session?.chooseUpgrade(id);
   }
 
+  isLevelUpPending(): boolean {
+    return this.session?.isLevelUpPending() ?? false;
+  }
+
+  setDebugPaused(paused: boolean): void {
+    this.session?.setDebugPaused(paused);
+  }
+
+  setGodMode(on: boolean): void {
+    this.session?.setGodMode(on);
+  }
+
+  isGodMode(): boolean {
+    return this.session?.isGodMode() ?? false;
+  }
+
+  healFull(): void {
+    this.session?.healFull();
+  }
+
+  addTime(seconds: number): void {
+    this.session?.addTime(seconds);
+  }
+
+  setTime(seconds: number): void {
+    this.session?.setTime(seconds);
+  }
+
+  getCurrentWeaponId(): string {
+    return this.meta.save().equippedLeafId;
+  }
+
+  setWeapon(nodeId: string): void {
+    if (!this.meta.debugEquipWeapon(nodeId)) return;
+    this.session?.updateFireConfig(resolveFireConfig(nodeId));
+  }
+
+  spawnEnemy(kind: EnemyKind): void {
+    this.session?.debugSpawnEnemy(kind);
+  }
+
+  clearEnemies(): void {
+    this.session?.clearEnemies();
+  }
+
   private handleEvent(e: GameEvent): void {
     this.zone.run(() => {
       if (e.type === 'hud') this.hud.emit(e.snapshot);
@@ -127,6 +179,7 @@ export class GameHostComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.debugMenu.unregisterRun(this);
     this.running = false;
     cancelAnimationFrame(this.raf);
     this.detachInput?.();
