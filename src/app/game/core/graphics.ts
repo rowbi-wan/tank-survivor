@@ -1,4 +1,5 @@
 import { Container, Graphics } from 'pixi.js';
+import { SCRAP_COLOR, SCRAP_OUTLINE, type ScrapType } from '../../meta/economy';
 import { ARENA_RADIUS, COLORS } from './constants';
 import type { EnemyKind } from './types';
 
@@ -188,21 +189,26 @@ export function createProjectileGfx(
   return g;
 }
 
-/** Scrap shard pickup (replaces candy XP orb). */
-export function createXpGemGfx(): Graphics {
+/** Colored scrap shard pickup (circuit / plating / core). */
+export function createScrapShardGfx(type: ScrapType = 'plating'): Graphics {
   const g = new Graphics();
+  paintScrapShard(g, type);
+  return g;
+}
+
+export function paintScrapShard(g: Graphics, type: ScrapType): void {
+  g.clear();
   g.moveTo(0, -8);
   g.lineTo(7, -2);
   g.lineTo(5, 7);
   g.lineTo(-6, 6);
   g.lineTo(-8, -3);
   g.closePath();
-  g.fill({ color: 0xc0c8d4 });
-  g.stroke({ width: 2, color: 0x5a6570 });
+  g.fill({ color: SCRAP_COLOR[type] });
+  g.stroke({ width: 2, color: SCRAP_OUTLINE[type] });
   g.moveTo(-2, -1);
   g.lineTo(3, 2);
-  g.stroke({ width: 2, color: 0x7fe9ff, alpha: 0.9 });
-  return g;
+  g.stroke({ width: 1.5, color: 0xffffff, alpha: 0.55 });
 }
 
 /** Bold screen-space aim reticle (draw white halo then dark core). */

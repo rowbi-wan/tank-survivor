@@ -97,6 +97,12 @@ export interface StatUpgradeOption {
   description: string;
 }
 
+export interface ScrapHud {
+  circuit: number;
+  plating: number;
+  core: number;
+}
+
 export interface GameHudSnapshot {
   hp: number;
   maxHp: number;
@@ -105,6 +111,7 @@ export interface GameHudSnapshot {
   xpToNext: number;
   timeSec: number;
   kills: number;
+  scrap: ScrapHud;
   paused: boolean;
   dead: boolean;
   levelUpPending: boolean;
@@ -115,7 +122,7 @@ export interface RunResult {
   timeSec: number;
   kills: number;
   level: number;
-  currencyEarned: number;
+  scrapEarned: ScrapHud;
   milestonesReached: string[];
 }
 

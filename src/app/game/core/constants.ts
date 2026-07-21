@@ -2,7 +2,7 @@ export const ARENA_RADIUS = 2200;
 export const FIXED_DT = 1 / 60;
 export const MAX_ENEMIES = 180;
 export const MAX_PROJECTILES = 400;
-export const MAX_XP_GEMS = 250;
+export const MAX_SCRAP_SHARDS = 400;
 /** Body radius used for contact + keeping enemies outside the tank sprite */
 export const PLAYER_HIT_RADIUS = 22;
 export const Z_GEM = 5;
@@ -53,6 +53,6 @@ export const STAT_POOL: Array<{
   {
     id: 'pickupRadius',
     label: 'Collector Field',
-    description: '+25% XP pickup radius',
+    description: '+25% scrap pickup radius',
   },
 ];

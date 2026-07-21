@@ -28,6 +28,9 @@ import { MetaSaveService } from '../../meta/meta-save.service';
             <span>Lv {{ h.level }}</span>
             <span>{{ formatTime(h.timeSec) }}</span>
             <span>Kills {{ h.kills }}</span>
+            <span class="scrap-c">C {{ h.scrap.circuit }}</span>
+            <span class="scrap-p">P {{ h.scrap.plating }}</span>
+            <span class="scrap-k">K {{ h.scrap.core }}</span>
           </div>
           <div class="xp">
             <div
@@ -65,7 +68,12 @@ import { MetaSaveService } from '../../meta/meta-save.service';
               <li>Survived {{ formatTime(sum.timeSec) }}</li>
               <li>Kills {{ sum.kills }}</li>
               <li>Level {{ sum.level }}</li>
-              <li>Scrap earned +{{ sum.currencyEarned }}</li>
+              <li>
+                Scrap +C{{ sum.scrapEarned.circuit }} · P{{
+                  sum.scrapEarned.plating
+                }}
+                · K{{ sum.scrapEarned.core }}
+              </li>
             </ul>
             <div class="actions">
               <a routerLink="/hangar" class="btn primary">Hangar</a>
@@ -106,6 +114,15 @@ import { MetaSaveService } from '../../meta/meta-save.service';
         font-weight: 600;
         color: var(--ink);
         text-shadow: 0 1px 0 #fff;
+      }
+      .scrap-c {
+        color: #1a6a7a;
+      }
+      .scrap-p {
+        color: #4a5560;
+      }
+      .scrap-k {
+        color: #a85a10;
       }
       .xp {
         margin-top: 0.5rem;
@@ -195,12 +212,12 @@ export class RunPageComponent {
   onRunEnd(result: RunResult): void {
     if (this.settled) return;
     this.settled = true;
-    const { currencyEarned } = this.meta.applyRunResult({
+    const { scrapEarned } = this.meta.applyRunResult({
       timeSec: result.timeSec,
-      kills: result.kills,
+      scrapEarned: result.scrapEarned,
       milestonesReached: result.milestonesReached,
     });
-    this.summary.set({ ...result, currencyEarned });
+    this.summary.set({ ...result, scrapEarned });
     this.levelOptions.set([]);
   }
 

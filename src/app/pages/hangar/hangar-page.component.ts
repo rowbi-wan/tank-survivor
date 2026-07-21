@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { formatScrapCost } from '../../meta/economy';
 import { MetaSaveService } from '../../meta/meta-save.service';
 import {
   STARTER_WEAPON_ID,
@@ -40,7 +41,15 @@ function buildTree(nodeId: string): TreeView {
       <header class="top">
         <a routerLink="/" class="btn ghost">← Home</a>
         <h1>Hangar</h1>
-        <div class="scrap">Scrap: {{ meta.save().currency }}</div>
+        <div class="scrap" aria-label="Scrap bank">
+          <span class="chip circuit"
+            >Circuit {{ meta.save().currency.circuit }}</span
+          >
+          <span class="chip plating"
+            >Plating {{ meta.save().currency.plating }}</span
+          >
+          <span class="chip core">Core {{ meta.save().currency.core }}</span>
+        </div>
       </header>
 
       <div class="bay" [class.tree-open]="turretOpen()">
@@ -146,7 +155,7 @@ function buildTree(nodeId: string): TreeView {
                       [disabled]="!canUnlock(node.id)"
                       (click)="unlock(node.id)"
                     >
-                      Unlock ({{ node.cost }})
+                      Unlock ({{ costLabel(node) }})
                     </button>
                   } @else {
                     <button
@@ -216,11 +225,25 @@ function buildTree(nodeId: string): TreeView {
         flex: 1;
       }
       .scrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
         font-weight: 700;
-        background: var(--cream);
-        padding: 0.5rem 0.9rem;
+      }
+      .scrap .chip {
+        padding: 0.45rem 0.75rem;
         border-radius: 999px;
         border: 3px solid var(--ink);
+        font-size: 0.9rem;
+      }
+      .scrap .circuit {
+        background: #d9f7ff;
+      }
+      .scrap .plating {
+        background: #e8ecf0;
+      }
+      .scrap .core {
+        background: #ffe4c4;
       }
       .bay {
         display: grid;
@@ -540,6 +563,10 @@ export class HangarPageComponent {
 
   canUnlock(id: string): boolean {
     return this.meta.canUnlock(id).ok;
+  }
+
+  costLabel(node: WeaponNode): string {
+    return formatScrapCost(node.costs);
   }
 
   unlockHint(id: string): string | null {

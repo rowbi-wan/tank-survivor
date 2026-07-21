@@ -1,5 +1,13 @@
 import { Injectable, signal } from '@angular/core';
-import { scrapForRun } from './economy';
+import {
+  addScrap,
+  canAfford,
+  emptyScrap,
+  formatScrapShortage,
+  subtractScrap,
+  type ScrapBundle,
+  type ScrapType,
+} from './economy';
 import {
   STARTER_WEAPON_ID,
   WEAPON_NODES,
@@ -8,10 +16,11 @@ import {
   isLegalEquip,
 } from './weapon-tree';
 
-const SAVE_KEY = 'tank-survivors-meta-v1';
+/** Bumped to reset old single-scrap saves (economy + unlocks). */
+const SAVE_KEY = 'tank-survivors-meta-v2';
 
 export interface MetaSave {
-  currency: number;
+  currency: ScrapBundle;
   unlockedNodeIds: string[];
   equippedLeafId: string;
   bestTimeSec: number;
@@ -20,7 +29,7 @@ export interface MetaSave {
 
 function defaultSave(): MetaSave {
   return {
-    currency: 0,
+    currency: emptyScrap(),
     unlockedNodeIds: [STARTER_WEAPON_ID],
     equippedLeafId: STARTER_WEAPON_ID,
     bestTimeSec: 0,
@@ -38,9 +47,18 @@ export class MetaSaveService {
       if (!raw) return defaultSave();
       const parsed = JSON.parse(raw) as Partial<MetaSave>;
       const base = defaultSave();
+      const currency =
+        parsed.currency && typeof parsed.currency === 'object'
+          ? {
+              circuit: Number(parsed.currency.circuit) || 0,
+              plating: Number(parsed.currency.plating) || 0,
+              core: Number(parsed.currency.core) || 0,
+            }
+          : base.currency;
       return {
         ...base,
         ...parsed,
+        currency,
         unlockedNodeIds: parsed.unlockedNodeIds?.length
           ? parsed.unlockedNodeIds
           : base.unlockedNodeIds,
@@ -78,8 +96,8 @@ export class MetaSaveService {
     if (node.milestoneGate && !s.milestones.includes(node.milestoneGate)) {
       return { ok: false, reason: `Need milestone: ${node.milestoneGate}` };
     }
-    if (s.currency < node.cost) {
-      return { ok: false, reason: 'Not enough scrap' };
+    if (!canAfford(s.currency, node.costs)) {
+      return { ok: false, reason: formatScrapShortage(s.currency, node.costs) };
     }
     return { ok: true };
   }
@@ -91,7 +109,7 @@ export class MetaSaveService {
     const node = getWeaponNode(nodeId)!;
     this.persist({
       ...s,
-      currency: s.currency - node.cost,
+      currency: subtractScrap(s.currency, node.costs),
       unlockedNodeIds: [...s.unlockedNodeIds, nodeId],
     });
     return true;
@@ -99,21 +117,20 @@ export class MetaSaveService {
 
   applyRunResult(input: {
     timeSec: number;
-    kills: number;
+    scrapEarned: ScrapBundle;
     milestonesReached: string[];
-  }): { currencyEarned: number } {
+  }): { scrapEarned: ScrapBundle } {
     const s = this.save();
-    const currencyEarned = scrapForRun(input.timeSec, input.kills);
     const milestones = Array.from(
       new Set([...s.milestones, ...input.milestonesReached]),
     );
     this.persist({
       ...s,
-      currency: s.currency + currencyEarned,
+      currency: addScrap(s.currency, input.scrapEarned),
       bestTimeSec: Math.max(s.bestTimeSec, input.timeSec),
       milestones,
     });
-    return { currencyEarned };
+    return { scrapEarned: input.scrapEarned };
   }
 
   equippedPathIds(): string[] {
@@ -124,10 +141,18 @@ export class MetaSaveService {
     return WEAPON_NODES;
   }
 
-  /** Dev: add scrap without a run. */
-  debugAddScrap(amount: number): void {
+  /** Dev: add scrap of one type (or all if omitted). */
+  debugAddScrap(amount: number, type?: ScrapType): void {
     const s = this.save();
-    this.persist({ ...s, currency: s.currency + amount });
+    const add = emptyScrap();
+    if (type) {
+      add[type] = amount;
+    } else {
+      add.circuit = amount;
+      add.plating = amount;
+      add.core = amount;
+    }
+    this.persist({ ...s, currency: addScrap(s.currency, add) });
   }
 
   /** Dev: unlock every weapon node (no cost / gate checks). */

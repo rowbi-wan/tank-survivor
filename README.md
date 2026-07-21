@@ -1,8 +1,8 @@
 # Tank Survivors
 
-Top-down tank arena survival in the Vampire Survivors vein: last as long as you can against escalating swarms, then spend scrap between runs on a branching cannon tree.
+Top-down tank arena survival in the Vampire Survivors vein: last as long as you can against escalating swarms, then spend typed scrap between runs on a branching cannon tree.
 
-Unlike classic auto-shooters, you aim the turret yourself. The tank stays centered on screen while the world scrolls. There’s no win screen—runs end when you’re wrecked. Longer survival and more kills mean more scrap and milestones that unlock deeper weapon options.
+Unlike classic auto-shooters, you aim the turret yourself. The tank stays centered on screen while the world scrolls. There’s no win screen—runs end when you’re wrecked. Kills drop **Circuit**, **Plating**, and **Core** shards; milestones unlock deeper weapon options.
 
 ## Play
 
@@ -13,18 +13,18 @@ npm start
 Open `http://localhost:4200`.
 
 - **WASD** move, **mouse** aim turret, **hold click** to fire
-- Level up in-run for stats; unlock weapon-tree nodes between runs with scrap
+- Level up in-run for stats; unlock weapon-tree nodes between runs with Circuit / Plating / Core
 
 ## Screens
 
 **Home** — Title and pitch. Start a run, or open the Hangar first.
 
-**Hangar** — Between-run hub. See scrap, unlock weapon-tree nodes, equip one active loadout path, check best time and milestones, then Deploy.
+**Hangar** — Between-run hub. See your three scrap banks, unlock weapon-tree nodes (typed costs), equip one active loadout path, check best time and milestones, then Deploy.
 
-**Run** — Full-screen arena with HUD (HP, level, timer, kills, XP). Overlays pause the action for:
+**Run** — Full-screen arena with HUD (HP, level, timer, kills, scrap C/P/K, XP). Overlays pause the action for:
 
 - **Level up** — pick 1 of 3 upgrades
-- **Wrecked!** — run summary (time, kills, level, scrap) → Hangar, Retry, or Home
+- **Wrecked!** — run summary (time, kills, level, scrap by type) → Hangar, Retry, or Home
 
 No pause menu, map select, or settings screen yet.
 
@@ -35,17 +35,29 @@ You enter with whatever cannon path you equipped in the Hangar (default: Main Ca
 - Move with WASD; the hull faces how you move
 - Aim the turret with the mouse; hold click to fire
 - Enemies densify over time: scout drones and swarm bots first, then brutes, ranged spitters, and suicidal exploders
-- Kills drop scrap shards (XP); pick them up to level and choose a temporary boost (hull, speed, damage, fire rate, collector range)
+- Kills grant XP automatically and drop colored scrap shards (Circuit / Plating / Core by enemy role); pick shards up to bank them for the Hangar
 - Bosses at **5:00** and **10:00** are milestones, not a finale
-- When HP hits zero → scrap from time + kills → back to Hangar
+- When HP hits zero → banked scrap deposits to meta → back to Hangar
 
 In-run upgrades are stats only. Weapon identity is what you chose before the run.
 
+## Scrap economy
+
+Three currencies, one per cannon branch at L2/L3:
+
+| Currency            | Branch |
+| ------------------- | ------ |
+| **Circuit** (cyan)  | Rapid  |
+| **Plating** (steel) | Spread |
+| **Core** (amber)    | Heavy  |
+
+L4 leaves cost a **primary-heavy mix** (lots of the branch type + some of the other two). Enemy drops lean by role (swarm → Circuit-led, brute → Plating+Core, bosses → big mixes). There is no end-of-run time/kill scrap formula — only shards you pick up.
+
 ## The Hangar
 
-Scrap funds a single starter cannon tree. You can unlock siblings over time, but each run you equip **one contiguous path** from the Main Cannon root down to a leaf. Other unlocks stay owned; they just aren’t active until you re-equip that branch.
+Typed scrap funds a single starter cannon tree. You can unlock siblings over time, but each run you equip **one contiguous path** from the Main Cannon root down to a leaf. Other unlocks stay owned; they just aren’t active until you re-equip that branch.
 
-Branches feel different: minigun / beam / pierce vs pulse waves / omni burst / spread vs heavy slugs / armor piercer / HE splash. Deeper nodes need both scrap and survival milestones (notably lasting 5 and 10 minutes).
+Branches feel different: minigun / beam / pierce vs pulse waves / omni burst / spread vs heavy slugs / armor piercer / HE splash. Deeper nodes need both the right scrap mix and survival milestones (notably lasting 5 and 10 minutes).
 
 ### Weapon tree
 
@@ -133,9 +145,9 @@ flowchart TB
 ## How it fits together
 
 ```text
-Home → Hangar (spend scrap, pick a branch) → Deploy
+Home → Hangar (spend typed scrap, pick a branch) → Deploy
          ↑                                      │
-         └── Wrecked! (scrap + milestones) ←────┘
+         └── Wrecked! (scrap bank + milestones) ←────┘
                     Survive waves + bosses,
                     level stats mid-run
 ```

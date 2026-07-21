@@ -1,5 +1,11 @@
 import { Container, Graphics } from 'pixi.js';
-import { scrapForRun } from '../../meta/economy';
+import {
+  emptyScrap,
+  expandScrapShards,
+  scrapDropForEnemy,
+  type ScrapBundle,
+  type ScrapType,
+} from '../../meta/economy';
 import {
   ARENA_RADIUS,
   BOSS_A_TIME,
@@ -7,7 +13,7 @@ import {
   COLORS,
   MAX_ENEMIES,
   MAX_PROJECTILES,
-  MAX_XP_GEMS,
+  MAX_SCRAP_SHARDS,
   MAX_ZONES,
   PLAYER_HIT_RADIUS,
   STAT_POOL,
@@ -20,10 +26,11 @@ import {
 import {
   createEnemyGfx,
   createProjectileGfx,
+  createScrapShardGfx,
   createTankGraphics,
-  createXpGemGfx,
   drawArenaFloor,
   drawRobotEnemy,
+  paintScrapShard,
   type TankView,
 } from './graphics';
 import { InputState } from './input';
@@ -91,11 +98,11 @@ interface Enemy {
   gfx: Graphics;
 }
 
-interface XpGem {
+interface ScrapShard {
   active: boolean;
   x: number;
   y: number;
-  value: number;
+  type: ScrapType;
   gfx: Graphics;
 }
 
@@ -128,7 +135,8 @@ export class GameSession {
   private readonly tank: TankView;
   private readonly projectiles: Projectile[] = [];
   private readonly enemies: Enemy[] = [];
-  private readonly gems: XpGem[] = [];
+  private readonly shards: ScrapShard[] = [];
+  private runScrap: ScrapBundle = emptyScrap();
   private readonly zones: HazardZone[] = [];
 
   private playerX = 0;
@@ -228,12 +236,18 @@ export class GameSession {
         gfx,
       });
     }
-    for (let i = 0; i < MAX_XP_GEMS; i++) {
-      const gfx = createXpGemGfx();
+    for (let i = 0; i < MAX_SCRAP_SHARDS; i++) {
+      const gfx = createScrapShardGfx('plating');
       gfx.visible = false;
       gfx.zIndex = Z_GEM;
       this.entityLayer.addChild(gfx);
-      this.gems.push({ active: false, x: 0, y: 0, value: 1, gfx });
+      this.shards.push({
+        active: false,
+        x: 0,
+        y: 0,
+        type: 'plating',
+        gfx,
+      });
     }
     for (let i = 0; i < MAX_ZONES; i++) {
       const gfx = new Graphics();
@@ -315,7 +329,7 @@ export class GameSession {
     this.updateEnemies(dt);
     this.updateProjectiles(dt);
     this.updateZones(dt);
-    this.updateGems(dt);
+    this.updateShards(dt);
     this.syncCamera();
 
     if (this.stats.hp <= 0) {
@@ -335,7 +349,7 @@ export class GameSession {
       timeSec: this.timeSec,
       kills: this.kills,
       level: this.stats.level,
-      currencyEarned: scrapForRun(this.timeSec, this.kills),
+      scrapEarned: { ...this.runScrap },
       milestonesReached: [...this.milestonesReached],
     };
   }
@@ -1219,26 +1233,42 @@ export class GameSession {
     e.active = false;
     e.gfx.visible = false;
     this.kills += 1;
-    this.spawnGem(e.x, e.y, e.xp);
+    this.gainXp(e.xp);
+    this.spawnScrapDrop(e.x, e.y, e.kind);
     if (e.kind === 'bossA') this.milestonesReached.add('boss_a');
     if (e.kind === 'bossB') this.milestonesReached.add('boss_b');
   }
 
-  private spawnGem(x: number, y: number, value: number): void {
-    const g = this.gems.find((q) => !q.active);
+  private spawnScrapDrop(x: number, y: number, kind: EnemyKind): void {
+    const types = expandScrapShards(scrapDropForEnemy(kind));
+    const n = types.length;
+    for (let i = 0; i < n; i++) {
+      const angle = (i / Math.max(n, 1)) * Math.PI * 2 + Math.random() * 0.4;
+      const dist = 10 + Math.random() * 28;
+      this.spawnShard(
+        x + Math.cos(angle) * dist,
+        y + Math.sin(angle) * dist,
+        types[i]!,
+      );
+    }
+  }
+
+  private spawnShard(x: number, y: number, type: ScrapType): void {
+    const g = this.shards.find((q) => !q.active);
     if (!g) {
-      this.gainXp(value);
+      this.runScrap[type] += 1;
       return;
     }
     g.active = true;
     g.x = x;
     g.y = y;
-    g.value = value;
+    g.type = type;
+    paintScrapShard(g.gfx, type);
     g.gfx.visible = true;
     g.gfx.position.set(x, y);
   }
 
-  private updateGems(dt: number): void {
+  private updateShards(dt: number): void {
     // Also tick hostile shots here
     for (const h of this.hostileShots) {
       if (!h.active) continue;
@@ -1261,7 +1291,7 @@ export class GameSession {
       }
     }
 
-    for (const g of this.gems) {
+    for (const g of this.shards) {
       if (!g.active) continue;
       const dx = this.playerX - g.x;
       const dy = this.playerY - g.y;
@@ -1275,7 +1305,7 @@ export class GameSession {
       if (dist < 24) {
         g.active = false;
         g.gfx.visible = false;
-        this.gainXp(g.value);
+        this.runScrap[g.type] += 1;
       }
     }
   }
@@ -1318,6 +1348,7 @@ export class GameSession {
       xpToNext: this.stats.xpToNext,
       timeSec: this.timeSec,
       kills: this.kills,
+      scrap: { ...this.runScrap },
       paused: this.paused || this.debugPaused,
       dead: this.dead,
       levelUpPending: this.levelUpPending,

@@ -1,12 +1,22 @@
 import type { FireConfig, WeaponBehavior } from '../game/core/types';
+import {
+  emptyScrap,
+  circuitOnly,
+  platingOnly,
+  coreOnly,
+  rapidLeafCost,
+  spreadLeafCost,
+  heavyLeafCost,
+  type ScrapBundle,
+} from './economy';
 
 export interface WeaponNode {
   id: string;
   name: string;
   description: string;
   parentId: string | null;
-  /** Soft currency cost to unlock */
-  cost: number;
+  /** Scrap cost to unlock (typed currencies) */
+  costs: ScrapBundle;
   /** Milestone id required before unlock (survive time / boss) */
   milestoneGate: string | null;
   /** Partial override merged onto ancestor chain when equipped */
@@ -25,7 +35,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Main Cannon',
     description: 'Single shot every second.',
     parentId: null,
-    cost: 0,
+    costs: emptyScrap(),
     milestoneGate: null,
     mods: {
       fireInterval: 1,
@@ -74,7 +84,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Rapid Fire',
     description: 'Shoot much faster.',
     parentId: 'cannon-base',
-    cost: 100,
+    costs: circuitOnly(100),
     milestoneGate: null,
     mods: { fireInterval: 0.35, projectileDamage: 9 },
   },
@@ -83,7 +93,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Spread Shot',
     description: 'Fire three rounds in a fan.',
     parentId: 'cannon-base',
-    cost: 100,
+    costs: platingOnly(100),
     milestoneGate: null,
     mods: { projectileCount: 3, spreadAngle: 0.45, fireInterval: 0.9 },
   },
@@ -92,7 +102,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Heavy Shells',
     description: 'Slower, heavier rounds built for big hits.',
     parentId: 'cannon-base',
-    cost: 90,
+    costs: coreOnly(90),
     milestoneGate: null,
     mods: {
       projectileDamage: 16,
@@ -108,7 +118,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Minigun',
     description: 'A high-rate autocannon.',
     parentId: 'rapid',
-    cost: 240,
+    costs: circuitOnly(240),
     milestoneGate: L3,
     mods: { fireInterval: 0.12, projectileDamage: 7, projectileSpeed: 600 },
   },
@@ -117,7 +127,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Beam Lance',
     description: 'A continuous energy beam.',
     parentId: 'rapid',
-    cost: 260,
+    costs: circuitOnly(260),
     milestoneGate: L3,
     mods: {
       behavior: 'laser' as WeaponBehavior,
@@ -132,7 +142,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Piercing Rounds',
     description: 'Rapid shots that pierce one enemy.',
     parentId: 'rapid',
-    cost: 180,
+    costs: circuitOnly(180),
     milestoneGate: L3,
     mods: { pierce: 1, projectileDamage: 8 },
   },
@@ -143,7 +153,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Pulse Wave',
     description: 'Wide arc of concussive waves.',
     parentId: 'spread',
-    cost: 240,
+    costs: platingOnly(240),
     milestoneGate: L3,
     mods: {
       behavior: 'wave' as WeaponBehavior,
@@ -159,7 +169,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Omni Burst',
     description: 'Fire in every direction.',
     parentId: 'spread',
-    cost: 260,
+    costs: platingOnly(260),
     milestoneGate: L3,
     mods: {
       behavior: 'spin' as WeaponBehavior,
@@ -173,7 +183,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Wide Spread',
     description: 'Five-shot spread.',
     parentId: 'spread',
-    cost: 160,
+    costs: platingOnly(160),
     milestoneGate: L3,
     mods: { projectileCount: 5, spreadAngle: 0.7 },
   },
@@ -184,7 +194,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Slugger',
     description: 'Massive slow shells that plow through crowds.',
     parentId: 'damage-plus',
-    cost: 170,
+    costs: coreOnly(170),
     milestoneGate: L3,
     mods: {
       projectileRadius: 20,
@@ -198,7 +208,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Armor Piercer',
     description: 'Maximum damage per shot. Aim counts.',
     parentId: 'damage-plus',
-    cost: 170,
+    costs: coreOnly(170),
     milestoneGate: L3,
     mods: {
       projectileDamage: 32,
@@ -212,7 +222,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'HE Shell',
     description: 'Rounds burst on impact with splash damage.',
     parentId: 'damage-plus',
-    cost: 220,
+    costs: coreOnly(220),
     milestoneGate: L3,
     mods: {
       projectileDamage: 14,
@@ -229,7 +239,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Hailstorm',
     description: 'Absurd rate of fire. Tiny high-velocity rounds.',
     parentId: 'super-rapid',
-    cost: 380,
+    costs: rapidLeafCost(380),
     milestoneGate: L4,
     mods: {
       fireInterval: 0.05,
@@ -243,7 +253,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Twin Barrels',
     description: 'Two offset streams of fire.',
     parentId: 'super-rapid',
-    cost: 400,
+    costs: rapidLeafCost(400),
     milestoneGate: L4,
     mods: {
       projectileCount: 2,
@@ -258,7 +268,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Overheat',
     description: 'Blazing burst, then a brief lull to cool down.',
     parentId: 'super-rapid',
-    cost: 420,
+    costs: rapidLeafCost(420),
     milestoneGate: L4,
     mods: {
       fireInterval: 0.04,
@@ -274,7 +284,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Long Beam',
     description: 'Longer, stronger laser.',
     parentId: 'laser',
-    cost: 400,
+    costs: rapidLeafCost(400),
     milestoneGate: L4,
     mods: { laserLength: 700, projectileDamage: 9, fireInterval: 0.06 },
   },
@@ -283,7 +293,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Wide Beam',
     description: 'A thicker beam that is easier to land.',
     parentId: 'laser',
-    cost: 400,
+    costs: rapidLeafCost(400),
     milestoneGate: L4,
     mods: {
       projectileRadius: 14,
@@ -297,7 +307,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Split Beam',
     description: 'On hit, the beam splits into three shards.',
     parentId: 'laser',
-    cost: 450,
+    costs: rapidLeafCost(450),
     milestoneGate: L4,
     mods: {
       refractCount: 3,
@@ -313,7 +323,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Skewer',
     description: 'Pierce through more targets.',
     parentId: 'pierce-rapid',
-    cost: 380,
+    costs: rapidLeafCost(380),
     milestoneGate: L4,
     mods: { pierce: 3, projectileDamage: 9, projectileRadius: 6 },
   },
@@ -322,7 +332,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Drill Bit',
     description: 'Slower shots that chew harder after each pierce.',
     parentId: 'pierce-rapid',
-    cost: 400,
+    costs: rapidLeafCost(400),
     milestoneGate: L4,
     mods: {
       pierce: 2,
@@ -337,7 +347,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Ricochet Round',
     description: 'Bounces once off the arena edge.',
     parentId: 'pierce-rapid',
-    cost: 400,
+    costs: rapidLeafCost(400),
     milestoneGate: L4,
     mods: {
       ricochetCount: 1,
@@ -353,7 +363,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Tidal Pulse',
     description: 'Huge wave with pierce.',
     parentId: 'wave',
-    cost: 400,
+    costs: spreadLeafCost(400),
     milestoneGate: L4,
     mods: {
       pierce: 2,
@@ -367,7 +377,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Residue Trail',
     description: 'Waves leave a burning residue path behind them.',
     parentId: 'wave',
-    cost: 420,
+    costs: spreadLeafCost(420),
     milestoneGate: L4,
     mods: {
       projectileCount: 5,
@@ -382,7 +392,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Breaker',
     description: 'Fewer waves, huge knockback.',
     parentId: 'wave',
-    cost: 400,
+    costs: spreadLeafCost(400),
     milestoneGate: L4,
     mods: {
       projectileCount: 3,
@@ -400,7 +410,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Orbit Burst',
     description: 'Pulse rings of fire outward from your tank.',
     parentId: 'spin-360',
-    cost: 400,
+    costs: spreadLeafCost(400),
     milestoneGate: L4,
     mods: {
       behavior: 'spin' as WeaponBehavior,
@@ -415,7 +425,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Rotary Spray',
     description: 'A continuous spinning spray of rounds.',
     parentId: 'spin-360',
-    cost: 420,
+    costs: spreadLeafCost(420),
     milestoneGate: L4,
     mods: {
       behavior: 'spin' as WeaponBehavior,
@@ -430,7 +440,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Nova Shell',
     description: 'One huge radial blast. Long cooldown.',
     parentId: 'spin-360',
-    cost: 450,
+    costs: spreadLeafCost(450),
     milestoneGate: L4,
     mods: {
       behavior: 'spin' as WeaponBehavior,
@@ -448,7 +458,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Helix Spread',
     description: 'A twisting spiral cone of rounds.',
     parentId: 'wide-spread',
-    cost: 380,
+    costs: spreadLeafCost(380),
     milestoneGate: L4,
     mods: {
       projectileCount: 5,
@@ -462,7 +472,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Homing Rounds',
     description: 'Soft-homing rounds within the fan.',
     parentId: 'wide-spread',
-    cost: 420,
+    costs: spreadLeafCost(420),
     milestoneGate: L4,
     mods: {
       projectileCount: 5,
@@ -476,7 +486,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Shot Wall',
     description: 'A dense mid-cone wall of fire.',
     parentId: 'wide-spread',
-    cost: 400,
+    costs: spreadLeafCost(400),
     milestoneGate: L4,
     mods: {
       projectileCount: 9,
@@ -492,7 +502,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Siege Slug',
     description: 'Even bigger. Even slower.',
     parentId: 'slugger',
-    cost: 400,
+    costs: heavyLeafCost(400),
     milestoneGate: L4,
     mods: {
       projectileRadius: 28,
@@ -506,7 +516,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Wrecking Ball',
     description: 'Pierce and knock foes aside.',
     parentId: 'slugger',
-    cost: 420,
+    costs: heavyLeafCost(420),
     milestoneGate: L4,
     mods: {
       pierce: 2,
@@ -521,7 +531,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Tar Shell',
     description: 'Leaves a brief slowing residue on impact.',
     parentId: 'slugger',
-    cost: 400,
+    costs: heavyLeafCost(400),
     milestoneGate: L4,
     mods: {
       trailRadius: 55,
@@ -539,7 +549,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Boss Breaker',
     description: 'Shreds elites and bosses.',
     parentId: 'heavy-crush',
-    cost: 450,
+    costs: heavyLeafCost(450),
     milestoneGate: L4,
     mods: {
       bossDamageMult: 2.25,
@@ -552,7 +562,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Armor Cracker',
     description: 'First hit softens the target for follow-ups.',
     parentId: 'heavy-crush',
-    cost: 400,
+    costs: heavyLeafCost(400),
     milestoneGate: L4,
     mods: {
       armorCrackDuration: 2.5,
@@ -565,7 +575,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Point Blank',
     description: 'Damage ramps hard at close range.',
     parentId: 'heavy-crush',
-    cost: 420,
+    costs: heavyLeafCost(420),
     milestoneGate: L4,
     mods: {
       pointBlankRange: 160,
@@ -581,7 +591,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Cluster Charge',
     description: 'Primary blast plus mini secondary detonations.',
     parentId: 'heavy-pop',
-    cost: 420,
+    costs: heavyLeafCost(420),
     milestoneGate: L4,
     mods: {
       splashRadius: 70,
@@ -597,7 +607,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Shockwave',
     description: 'Wider splash, softer core blast.',
     parentId: 'heavy-pop',
-    cost: 400,
+    costs: heavyLeafCost(400),
     milestoneGate: L4,
     mods: {
       splashRadius: 140,
@@ -610,7 +620,7 @@ export const WEAPON_NODES: WeaponNode[] = [
     name: 'Delayed Charge',
     description: 'Delayed second boom at the impact point.',
     parentId: 'heavy-pop',
-    cost: 450,
+    costs: heavyLeafCost(450),
     milestoneGate: L4,
     mods: {
       splashRadius: 75,

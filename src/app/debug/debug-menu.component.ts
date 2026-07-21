@@ -112,21 +112,41 @@ const ENEMY_KINDS: EnemyKind[] = [
         } @else {
           <section>
             <h3>Meta</h3>
-            <p class="meta-line">Scrap: {{ meta.save().currency }}</p>
+            <p class="meta-line">
+              C {{ meta.save().currency.circuit }} · P
+              {{ meta.save().currency.plating }} · K
+              {{ meta.save().currency.core }}
+            </p>
             <div class="row">
               <button
                 type="button"
                 class="btn small"
-                (click)="meta.debugAddScrap(100)"
+                (click)="meta.debugAddScrap(100, 'circuit')"
               >
-                +100 scrap
+                +100 Circuit
               </button>
               <button
                 type="button"
                 class="btn small"
-                (click)="meta.debugAddScrap(1000)"
+                (click)="meta.debugAddScrap(100, 'plating')"
               >
-                +1000 scrap
+                +100 Plating
+              </button>
+              <button
+                type="button"
+                class="btn small"
+                (click)="meta.debugAddScrap(100, 'core')"
+              >
+                +100 Core
+              </button>
+            </div>
+            <div class="row">
+              <button
+                type="button"
+                class="btn small"
+                (click)="meta.debugAddScrap(500)"
+              >
+                +500 all
               </button>
             </div>
             <div class="row">
