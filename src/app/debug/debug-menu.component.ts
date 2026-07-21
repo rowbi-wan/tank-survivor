@@ -20,7 +20,7 @@ const ENEMY_KINDS: EnemyKind[] = [
   standalone: true,
   template: `
     @if (debug.enabled && debug.open()) {
-      <aside class="panel bubble-panel" aria-label="Debug menu">
+      <aside class="panel surface-panel" aria-label="Debug menu">
         <header class="head">
           <h2>Debug</h2>
           <button type="button" class="btn small" (click)="debug.close()">

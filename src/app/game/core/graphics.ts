@@ -49,7 +49,7 @@ export function createTankGraphics(): TankView {
   return root;
 }
 
-export function createBubbleEnemy(
+export function createEnemyGfx(
   radius: number,
   color: number,
   outline: number,

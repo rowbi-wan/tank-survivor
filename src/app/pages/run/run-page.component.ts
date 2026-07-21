@@ -41,9 +41,9 @@ import { MetaSaveService } from '../../meta/meta-save.service';
       @if (levelOptions(); as opts) {
         @if (opts.length) {
           <div class="modal">
-            <div class="modal-card bubble-panel">
+            <div class="modal-card surface-panel">
               <h2>Level up!</h2>
-              <p>Pick a bubble boost</p>
+              <p>Pick an upgrade</p>
               <div class="choices">
                 @for (opt of opts; track opt.id) {
                   <button type="button" class="choice" (click)="pick(opt)">
@@ -59,8 +59,8 @@ import { MetaSaveService } from '../../meta/meta-save.service';
 
       @if (summary(); as sum) {
         <div class="modal">
-          <div class="modal-card bubble-panel">
-            <h2>Popped!</h2>
+          <div class="modal-card surface-panel">
+            <h2>Wrecked!</h2>
             <ul>
               <li>Survived {{ formatTime(sum.timeSec) }}</li>
               <li>Kills {{ sum.kills }}</li>

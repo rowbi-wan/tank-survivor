@@ -11,8 +11,55 @@ export interface FireConfig {
   behavior: WeaponBehavior;
   /** Laser beam length in world units */
   laserLength: number;
-  /** Wave arc width in radians */
+  /** Wave arc width in radians (reserved / flavor) */
   waveArc: number;
+  /** Splash radius on impact (0 = none) */
+  splashRadius: number;
+  /** Multiplier applied to splash damage */
+  splashDamageMult: number;
+
+  /** Lateral barrel offset for twin streams (world units) */
+  barrelOffset: number;
+  /** Per-shot helix angle step (radians) */
+  helixStep: number;
+  /** Shots before overheat lull (0 = off) */
+  overheatShots: number;
+  /** Forced cooldown after overheat */
+  overheatLull: number;
+  /** Laser splits into N bullets on first beam hit (0 = off) */
+  refractCount: number;
+  /** Homing turn strength (0 = off, ~3–8 typical) */
+  homingStrength: number;
+  /** Remaining wall/edge bounces */
+  ricochetCount: number;
+  /** Impulse applied to enemies on hit */
+  knockback: number;
+  /** Drop damage/slow zones while traveling or on impact */
+  trailRadius: number;
+  trailDuration: number;
+  trailDamagePerSec: number;
+  /** Movement multiplier while in trail (1 = none) */
+  trailSlowMult: number;
+  /** Delayed mine at impact (seconds; 0 = off) */
+  mineDelay: number;
+  mineRadius: number;
+  mineDamageMult: number;
+  /** Extra mini-pops around splash */
+  clusterCount: number;
+  clusterRadius: number;
+  clusterDamageMult: number;
+  /** Extra damage multiplier vs bossA/bossB */
+  bossDamageMult: number;
+  /** Soften target after hit */
+  armorCrackDuration: number;
+  armorCrackMult: number;
+  /** Close-range damage ramp */
+  pointBlankRange: number;
+  pointBlankBonus: number;
+  /** Extra damage after each pierce */
+  pierceDamageBonus: number;
+  /** Spawn spin projectiles from a ring (orbit burst) */
+  orbitRadius: number;
 }
 
 export interface PlayerStats {

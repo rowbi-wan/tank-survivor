@@ -8,11 +8,11 @@ import { RouterLink } from '@angular/router';
   template: `
     <main class="page">
       <div class="hero">
-        <p class="eyebrow">Bubble arena survival</p>
+        <p class="eyebrow">Arena survival</p>
         <h1>Tank Survivors</h1>
         <p class="lede">
-          Stay centered. Aim the turret. Surf waves of candy foes — then spend
-          scrap on a branching cannon tree between runs.
+          Stay centered. Aim the turret. Surf waves of foes — then spend scrap
+          on a branching cannon tree between runs.
         </p>
         <div class="actions">
           <a routerLink="/run" class="btn primary">Start Run</a>

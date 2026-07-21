@@ -44,7 +44,7 @@ function buildTree(nodeId: string): TreeView {
       </header>
 
       <div class="bay" [class.tree-open]="turretOpen()">
-        <section class="tank-panel bubble-panel">
+        <section class="tank-panel surface-panel">
           <div class="tank-stage">
             @for (slot of slots; track slot.id) {
               <button
@@ -92,7 +92,7 @@ function buildTree(nodeId: string): TreeView {
 
         @if (turretOpen()) {
           <section
-            class="tree-pane bubble-panel"
+            class="tree-pane surface-panel"
             aria-label="Turret weapon tree"
           >
             <header class="tree-head">

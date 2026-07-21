@@ -6,9 +6,11 @@ export const MAX_XP_GEMS = 250;
 /** Body radius used for contact + keeping enemies outside the tank sprite */
 export const PLAYER_HIT_RADIUS = 22;
 export const Z_GEM = 5;
+export const Z_ZONE = 8;
 export const Z_ENEMY = 10;
 export const Z_PROJECTILE = 20;
 export const Z_PLAYER = 100;
+export const MAX_ZONES = 80;
 
 export const BOSS_A_TIME = 5 * 60;
 export const BOSS_B_TIME = 10 * 60;
@@ -36,13 +38,21 @@ export const STAT_POOL: Array<{
   label: string;
   description: string;
 }> = [
-  { id: 'maxHp', label: 'Bubble Armor', description: '+20 max HP and heal 20' },
-  { id: 'moveSpeed', label: 'Turbo Treads', description: '+12% move speed' },
-  { id: 'damage', label: 'Pop Power', description: '+15% damage' },
+  {
+    id: 'maxHp',
+    label: 'Reinforced Hull',
+    description: '+20 max HP and heal 20',
+  },
+  {
+    id: 'moveSpeed',
+    label: 'Overdrive Tracks',
+    description: '+12% move speed',
+  },
+  { id: 'damage', label: 'Hard Impact', description: '+15% damage' },
   { id: 'fireRate', label: 'Quick Trigger', description: '+12% fire rate' },
   {
     id: 'pickupRadius',
-    label: 'Magnet Gum',
+    label: 'Collector Field',
     description: '+25% XP pickup radius',
   },
 ];
